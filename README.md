@@ -36,6 +36,29 @@ New-Item -ItemType Junction `
 
 > junction 依赖 clone 下来的目录存在，删掉或移动它技能就会失效。想更新就 `git pull`，改动即时生效，不用重装。
 
+## 让所有任务都过这道门
+
+技能是"按需触发"的——不说触发词，它不会自己上。要让**每个任务**都过门，得把规则挂到 DSH 每次会话都会注入的地方：**用户全局的 `$DSH_HOME/AGENTS.md`**。
+
+仓库里附了模板 `templates/AGENTS.template.md`，复制过去即可：
+
+```powershell
+Copy-Item skills\multi-role-delivery\templates\AGENTS.template.md "$env:DSH_HOME\AGENTS.md"
+```
+
+已经有 `$DSH_HOME\AGENTS.md` 的话，把内容追加进去，别覆盖。
+
+> 模板特意不叫 `AGENTS.md`——否则它自己会被当成工作区指令文件，在本仓库里重复注入一份。
+
+装好后**每个新会话**都会带上这条纪律：有交付物的任务必须先加载本技能、走完整流程、过了内部初筛才能交到你面前。
+
+> `AGENTS.md` 在每个会话都占上下文，所以模板刻意写得很短（约 1KB）；详细流程放在技能里按需加载。
+> 改动 `AGENTS.md` 后已有会话要**新开或重启**才生效——DSH 只在第一个请求注入这条基线。
+
+### 分级，不是一律上重流程
+
+模板按规模分档：琐碎问答直接答（只做自检），有交付物的走完整流程，大任务再加用户终审循环。对"现在几点"这种问题拉起六个角色是纯浪费。拿不准就往上靠一档。
+
 ## 用法
 
 直接说任务就行，触发词包括"多角色""组队""分工""并行""让产品检查""交付给我""改到我满意""全自动"等。例如：
@@ -59,7 +82,8 @@ New-Item -ItemType Junction `
 skills/multi-role-delivery/
 ├── SKILL.md                      # 流程规范（技能本体）
 └── templates/
-    └── team-workflow.js          # workflow 工具编排骨架
+    ├── team-workflow.js          # workflow 工具编排骨架
+    └── AGENTS.template.md        # 全局交付门，复制到 $DSH_HOME/AGENTS.md
 ```
 
 `templates/team-workflow.js` 支持两种模式：
